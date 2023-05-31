@@ -1,0 +1,26 @@
+index,colname
+race_white,White rate
+race_black,Black rate
+race_hispanic,Hispanic rate
+sex_female,Female rate
+age_0_17,People under 18 rate
+age_over65,People over 65 rate
+ind_divorce,Divorce index
+marriage_never_married,Singleness rate
+lang_second_eng,Non-English rate
+empl_civilian_unemployed,Unemployment rate
+ind_agriculture,Employed in agriculture rate
+income_median,Median income
+public_asist,Public assistance rate
+gini_index,Gini index
+transp_car,Use car frequency
+transp_public,Use public transport frequency
+pov_under_1,Highest poverty index
+insured_under65,Insurance rate
+house_vacant,Vacant houses rate
+housevalue_median,Median of house value
+POP16dens,Poulation density
+MEDIAN_INCOME08_16,Income change index
+POP08_16,Population change index
+edu_high,High education rate
+housevalue_IQR,House value spread
