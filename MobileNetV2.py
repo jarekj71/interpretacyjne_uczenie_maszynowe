@@ -15,17 +15,13 @@ import torchvision
 
 import shap
 
+
+
 #%%
-
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-model = torchvision.models.mobilenet_v2(pretrained=True, progress=False)
-model.to(device)
-model.eval()
+#zbiór danych załączony do 
 X, y = shap.datasets.imagenet50()
 # y nie jest wykorzystywany
 
-#%%
 
 # Getting ImageNet 1000 class names
 url = "https://s3.amazonaws.com/deep-learning-models/image-models/imagenet_class_index.json"
@@ -40,12 +36,14 @@ mean = [0.485, 0.456, 0.406]
 std = [0.229, 0.224, 0.225]
 
 '''
+
 n number
 | c color
 | h height rows
 V w width cols
 
 rotacja c na koniec
+
 n
 h
 w
@@ -70,7 +68,7 @@ def nchw_to_nhwc(x: torch.Tensor) -> torch.Tensor:
         x = x if x.shape[2] == 3 else x.permute(1, 2, 0)
     return x
 
-#%%% Pipes 
+#Pipes 
 # Rotacja jest potrzebna aby zastosować transformację obrazu w sposób zwektoryzowany
 transform = [
     torchvision.transforms.Lambda(nhwc_to_nchw),
@@ -95,6 +93,11 @@ inv_transform = torchvision.transforms.Compose(inv_transform)
 
 
 #%%
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+
+#%%
 #predykcja obrazu wymaga zamiany w tensor i wysłanie do device
 
 def predict(img: np.ndarray) -> torch.Tensor:
@@ -111,23 +114,43 @@ classes = torch.argmax(out, axis=1).cpu().numpy()
 print(f"Classes: {classes}: {np.array(class_names)[classes]}")
 
 
-#%% explanation
 
-topk = 4
-batch_size = 50
-n_evals = 10000
+#%%
 
+model = torchvision.models.mobilenet_v2(weights='MobileNet_V2_Weights.IMAGENET1K_V1', progress=False).to(device).eval()
+#model = models.vgg16(weights='VGG16_Weights.IMAGENET1K_V1').to(device).eval() # inny model
+# predict i predict
+Xtrp = Xtr.permute(0, 3, 1, 2)
+e = shap.GradientExplainer(model, Xtrp)
+shap_values, indexes = e.shap_values(Xtrp[[11, 15]], ranked_outputs=2, nsamples=50)
+
+#%%
+
+index_names = np.vectorize(lambda x: class_names[x])(indexes)
+# zmiana z tensora na image
+shap_values = [np.swapaxes(np.swapaxes(s, 2, 3), 1, -1) for s in shap_values]
+shap.image_plot(shap_values, X[[11, 15]].astype(int), index_names)
+
+
+#%% explanation z maskerem
+
+
+model = torchvision.models.mobilenet_v2(weights='MobileNet_V2_Weights.IMAGENET1K_V1', progress=False).to(device).eval()
 masker_blur = shap.maskers.Image("blur(64,64)", Xtr[0].shape)
 # funkcja predict, masker output list aklas
 explainer = shap.Explainer(predict, masker_blur, output_names=class_names)
 
 #%%
 
+topk = 3
+batch_size = 50
+n_evals = 10000
+
 shap_values = explainer(
     Xtr[7:8],
     max_evals=n_evals,
     batch_size=batch_size,
-    outputs=shap.Explanation.argsort.flip[:3],
+    outputs=shap.Explanation.argsort.flip[:topk],
 )
 
 #%%
